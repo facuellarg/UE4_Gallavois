@@ -1,5 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+
 #include "MyPawn.h"
 
 #include "Components/InputComponent.h"
@@ -8,6 +9,7 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/EngineBaseTypes.h"
+#include "Math/UnrealMathVectorCommon.h"
 
 // Sets default values
 AMyPawn::AMyPawn()
@@ -25,12 +27,20 @@ AMyPawn::AMyPawn()
 	BaseMesh->SetupAttachment(CapsuleComp);
 	SpringArm->SetupAttachment(RootComponent);
 	Camera->SetupAttachment(SpringArm);
+	RotateDirectionVector = FVector::ZeroVector;
+	MoveDirection = FVector::ZeroVector;
 }
 
 // Called when the game starts or when spawned
 void AMyPawn::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+int AMyPawn::getSing(float value) 
+{
+	if(value > 0.0) return 1;
+	return -1;
 }
 
 // Called every frame
@@ -46,38 +56,46 @@ void AMyPawn::Tick(float DeltaTime)
 void AMyPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	Change = false;
 	PlayerInputComponent->BindAxis("Forward", this, &AMyPawn::CalculateMoveInputForward);
 	PlayerInputComponent->BindAxis("Turns", this, &AMyPawn::CalculateMoveInputTurns);
-	PlayerInputComponent->BindAxis("Rotate", this, &AMyPawn::CalculateRotateInput);
 	PlayerInputComponent->BindAction<FSetFireDelegate>("Fire", EInputEvent::IE_Pressed, this, &AMyPawn::SetFire, true);
 	PlayerInputComponent->BindAction<FSetFireDelegate>("Fire", EInputEvent::IE_Released, this, &AMyPawn::SetFire, false);
 }
 
 void AMyPawn::CalculateMoveInputForward(float Value)
 {
-	MoveDirectionForward = FVector(Value * MoveSpeed * GetWorld()->DeltaTimeSeconds, 0, 0);
+	if (Value != 0){
+		Change = true;
+	}RotateDirectionVector.Y = -Value;
+	float value = Value  * GetWorld()->DeltaTimeSeconds;
+	MoveDirection.X = value;
 }
 
 void AMyPawn::CalculateMoveInputTurns(float Value)
 {
-	MoveDirectionTurns = FVector(0, Value * MoveSpeed * GetWorld()->DeltaTimeSeconds, 0);
-}
-
-void AMyPawn::CalculateRotateInput(float Value)
-{
-	FRotator Rotation = FRotator(0, Value * MoveSpeed * GetWorld()->DeltaTimeSeconds, 0);
-	RotateDirection = FQuat(Rotation);
+	if (Value!=0){
+		Change=true;
+	}
+	RotateDirectionVector.X  = Value;
+	MoveDirection.Y =  Value  * GetWorld()->DeltaTimeSeconds;
 }
 
 void AMyPawn::Move()
 {	
 	
-	AddActorLocalOffset(MoveDirectionForward+MoveDirectionTurns);
+	AddActorLocalOffset(MoveDirection.GetSafeNormal(0)*MoveSpeed);
 }
 
 void AMyPawn::Rotate()
 {
-	SpringArm->AddLocalRotation(RotateDirection);
+	if (RotateDirectionVector.X+RotateDirectionVector.Y!=0){
+
+		RotateDirection = FQuat( RotateDirectionVector.ToOrientationRotator());
+		// UE_LOG(LogTemp, Warning, TEXT("%s"),*BaseMesh->GetRelativeRotation().ToString());
+		// UE_LOG(LogTemp, Warning, TEXT("%s"),*RotateDirectionVector.ToOrientationRotator().ToString());
+		BaseMesh->SetRelativeRotation(RotateDirection);
+	}
 	// SpringArm->AddActorLocalRotation(RotateDirection);
 }
 

@@ -34,12 +34,14 @@ private:
 	float MoveSpeed = 100.0f;
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float RotateSpeed = 100.0f;
+	FVector MoveDirection;
+	FVector RotateDirectionVector;
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	bool Change;
 
-
-	FVector MoveDirectionForward;
-	FVector MoveDirectionTurns;
-	FQuat RotateDirection;
 	bool Fyring;
+
+	FQuat RotateDirection;
 
 	void Move();
 	void Rotate();
@@ -65,4 +67,5 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	int getSing(float value);
 };
